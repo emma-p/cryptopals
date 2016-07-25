@@ -36,9 +36,7 @@ bestScore = foldl (\ (m1, s1) (m2, s2) -> if s1 > s2 then (m1, s1) else (m2, s2)
 
 -- Try to find char in frequencies table; if not, give a high negative score to the character
 scoreChar :: Char -> Float
-scoreChar c = Map.findWithDefault (- 10.0) c frequencies
-
-score :: String -> Float
+scoreChar c = Map.findWithDefault (- 10.0) c frequencies  score :: String -> Float
 score = sum . map scoreChar
 
 -- Create key of length n with two hex chars
