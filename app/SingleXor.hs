@@ -16,11 +16,38 @@ type Score = Int
 instance Show HexChar where
   show = show . toChar
 
+bestMessage :: [HexString] -> (String, Float)
+bestMessage messages =
+  let decrypted = map decryptedScores messages
+      bestMessages = map bestScore decrypted
+  in bestScore bestMessages
+
+-- Create possible solution for a hex string, calculate their score and sort the results
+decryptedScores :: HexString -> [(String, Float)]
+decryptedScores message =
+  let chars = map chr [0..127]
+      decrypted = map (hexToStr . flip decryptWithSingleKey message) chars
+      scores = map score decrypted
+  in sortOn snd $ zip decrypted scores
+
+-- Keep str with best score, or return 'No message found' if no string has a value > 0
+bestScore :: [(String, Float)] -> (String, Float)
+bestScore = foldl (\ (m1, s1) (m2, s2) -> if s1 > s2 then (m1, s1) else (m2, s2)) ("No message found", 0)
+
+-- Try to find char in frequencies table; if not, give a high negative score to the character
+scoreChar :: Char -> Float
+scoreChar c = Map.findWithDefault (- 10.0) c frequencies
+
+score :: String -> Float
+score = sum . map scoreChar
+
+-- Create key of length n with two hex chars
 expandKey :: Int -> (HexChar, HexChar) -> HexString
 expandKey n (c1, c2) = concat $ replicate (n `div` 2) [c1, c2]
 
-decrypt :: Char -> HexString -> HexString
-decrypt key word =
+-- Xor hex string with single key of same length
+decryptWithSingleKey :: Char -> HexString -> HexString
+decryptWithSingleKey key word =
     let keyStr = [key]
         keyHexStr = map toLower $ hex keyStr
         [hex1, hex2] = map fromChar keyHexStr
@@ -28,34 +55,13 @@ decrypt key word =
         decrypted = xorStr word keyReplicated
     in decrypted
 
+-- Convert the hex string to its plain text equivalent
 hexToStr :: HexString -> String
 hexToStr str =
     let chunks = chunksOf 2 str
         chunksToChar = map (map toChar) chunks
         decoded = runIdentity $ mapM unhex chunksToChar
     in  concat decoded
-
-scoreChar :: Char -> Float
-scoreChar c = Map.findWithDefault (- 10.0) c frequencies
-
-score :: String -> Float
-score = sum . map scoreChar
-
-decryptedScores :: HexString -> [(String, Float)]
-decryptedScores message =
-  let chars = map chr [0..127]
-      decrypted = map (hexToStr . flip decrypt message) chars
-      scores = map score decrypted
-  in sortOn snd $ zip decrypted scores
-
-bestScore :: [(String, Float)] -> (String, Float)
-bestScore = foldl (\ (m1, s1) (m2, s2) -> if s1 > s2 then (m1, s1) else (m2, s2)) ("No message found", 0)
-
-bestMessage :: [HexString] -> (String, Float)
-bestMessage messages =
-  let decrypted = map decryptedScores messages
-      bestMessages = map bestScore decrypted
-  in bestScore bestMessages
 
 frequencies :: Map.Map Char Float
 frequencies =
