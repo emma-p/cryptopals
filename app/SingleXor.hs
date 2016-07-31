@@ -1,15 +1,13 @@
 module SingleXor where
 
 import Xor
-import Data.List.Split
 import Data.List
 import Data.Char
-import Data.Hex
 import qualified Data.String.Utils as StringUtils
 import qualified Data.Map.Strict as Map
-import Control.Monad.Identity
 import Data.Maybe
 import HexChar
+import HexString
 
 type Score = Int
 
@@ -26,7 +24,7 @@ bestMessage messages =
 decryptedScores :: HexString -> [(String, Float)]
 decryptedScores message =
   let chars = map chr [0..127]
-      decrypted = map (hexToStr . flip decryptWithSingleKey message) chars
+      decrypted = map (decode . flip decryptWithSingleKey message) chars
       scores = map score decrypted
   in sortOn snd $ zip decrypted scores
 
@@ -36,30 +34,17 @@ bestScore = foldl (\ (m1, s1) (m2, s2) -> if s1 > s2 then (m1, s1) else (m2, s2)
 
 -- Try to find char in frequencies table; if not, give a high negative score to the character
 scoreChar :: Char -> Float
-scoreChar c = Map.findWithDefault (- 10.0) c frequencies  score :: String -> Float
-score = sum . map scoreChar
+scoreChar c = Map.findWithDefault (- 10.0) c frequencies
 
--- Create key of length n with two hex chars
-expandKey :: Int -> (HexChar, HexChar) -> HexString
-expandKey n (c1, c2) = concat $ replicate (n `div` 2) [c1, c2]
+score :: String -> Float
+score = sum . map scoreChar
 
 -- Xor hex string with single key of same length
 decryptWithSingleKey :: Char -> HexString -> HexString
 decryptWithSingleKey key word =
-    let keyStr = [key]
-        keyHexStr = map toLower $ hex keyStr
-        [hex1, hex2] = map fromChar keyHexStr
+    let [hex1, hex2] = encode [key]
         keyReplicated = expandKey (length word) (hex1, hex2)
-        decrypted = xorStr word keyReplicated
-    in decrypted
-
--- Convert the hex string to its plain text equivalent
-hexToStr :: HexString -> String
-hexToStr str =
-    let chunks = chunksOf 2 str
-        chunksToChar = map (map toChar) chunks
-        decoded = runIdentity $ mapM unhex chunksToChar
-    in  concat decoded
+    in xorStr word keyReplicated
 
 frequencies :: Map.Map Char Float
 frequencies =

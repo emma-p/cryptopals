@@ -2,6 +2,7 @@ module Xor where
 
 import Data.List.Split
 import HexChar
+import HexString
 
 type BitList = [Bool]
 

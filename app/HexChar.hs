@@ -1,8 +1,5 @@
 module HexChar where
 
-import Data.Hex
-import Data.Char
-
 data HexChar
   = Hex0
   | Hex1
@@ -48,10 +45,3 @@ fromChar c =
   case lookup c charHexChar of
     Just h -> h
     _ -> error $ "Error: unexpected character: " ++ show c
-
-type HexString = [HexChar]
-
-strToHexString :: String -> HexString
-strToHexString str =
-  let encoded = hex str
-  in map fromChar $ (map toLower encoded)

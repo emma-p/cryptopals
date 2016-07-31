@@ -1,7 +1,6 @@
 module RepeatingKeyXor where
 
 import HexChar
-import Data.Hex
 import Data.Char
 import Xor
 
